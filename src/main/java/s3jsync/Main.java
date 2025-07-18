@@ -1,6 +1,5 @@
 package s3jsync;
 import java.io.IOException;
-
 import java.util.Scanner;
 
 public class Main {
@@ -17,5 +16,10 @@ public class Main {
 
             configManager.save(accessKey, secretKey, region);
         }
+
+        S3Manager manager = new S3Manager(configManager.getAccessKey(),
+                configManager.getSecretKey(), configManager.getRegion());
+        manager.listBuckets();
+        manager.listObjects("mywebsite-8a7sd82bn");
     }
 }
