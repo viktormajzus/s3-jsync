@@ -6,8 +6,8 @@ import java.util.Scanner;
 
 public class Main {
     public static void main(String[] args) throws IOException, InterruptedException {
-        ConfigManager configManager = new ConfigManager();
-        if(!configManager.load()) {
+        CredentialsManager credentialsManager = new CredentialsManager();
+        if(!credentialsManager.load()) {
             Scanner scanner = new Scanner(System.in);
             System.out.println("Please enter your access key:");
             String accessKey = scanner.nextLine();
@@ -16,11 +16,11 @@ public class Main {
             System.out.println("Please enter your region:");
             String region = scanner.nextLine();
 
-            configManager.save(accessKey, secretKey, region);
+            credentialsManager.save(accessKey, secretKey, region);
         }
 
-        S3Manager manager = new S3Manager(configManager.getAccessKey(),
-                configManager.getSecretKey(), configManager.getRegion());
+        S3Manager manager = new S3Manager(credentialsManager.getAccessKey(),
+                credentialsManager.getSecretKey(), credentialsManager.getRegion());
         manager.listBuckets();
         manager.listObjects("mywebsite-8a7sd82bn");
         manager.uploadDirectory(Paths.get("C:\\Users\\v.majzus\\Desktop\\TestWrite"), "mywebsite-8a7sd82bn");

@@ -7,55 +7,62 @@ import java.nio.file.Path;
 import java.util.List;
 
 public class ConfigManager {
-    private final Path configPath;
-    private String accessKey;
-    private String secretKey;
-    private String region;
+    private int threadCount;
+    private int rateLimit;
+    private int partSize;
+    Path configPath;
 
     public ConfigManager() throws IOException {
         PathHandler pathHandler = new PathHandler("s3-jsync");
         pathHandler.ensureBaseDirExists();
 
-        configPath = pathHandler.getPathTo("credentials.cfg");
+        configPath = pathHandler.getPathTo("config.cfg");
+
+        if(!Files.exists(configPath)) createConfig(configPath);
+
+        load();
     }
 
-    public Boolean load() throws IOException {
-        if(!Files.exists(configPath)) return false;
-
-        List<String> lines = Files.readAllLines(getConfigPath());
-        if(lines.size() < 4 || !lines.get(0).equals("valid")) return false;
-
-        accessKey = lines.get(1).trim();
-        secretKey = lines.get(2).trim();
-        region = lines.get(3).trim();
-
-        return true;
+    public int getThreadCount() {
+        return threadCount;
     }
 
-    public void save(String accessKey, String secretKey, String region) throws IOException {
+    public int getRateLimit() {
+        return rateLimit;
+    }
+
+    public int getPartSize() {
+        return partSize;
+    }
+
+    private void load() throws IOException {
+        List<String> lines = Files.readAllLines(configPath);
+        if(lines.size() < 3) throw new IOException();
+
+        String threadCountStrings[] = lines.get(0).split("=");
+        threadCount = Integer.parseInt(threadCountStrings[1]);
+
+        String rateLimitStrings[] = lines.get(1).split("=");
+        rateLimit = Integer.parseInt(rateLimitStrings[1]);
+
+        String partSizeStrings[] = lines.get(2).split("=");
+        partSize = Integer.parseInt(partSizeStrings[1]);
+    }
+
+    private void createConfig(Path configPath) throws IOException {
+        if(Files.exists(configPath)) return;
+
         Files.createDirectories(configPath.getParent());
 
         try (BufferedWriter writer = Files.newBufferedWriter(configPath)) {
-            writer.write("valid\n");
-            writer.write(accessKey + "\n");
-            writer.write(secretKey + "\n");
-            writer.write(region + "\n");
+
+            int defaultThreadCount = 8;
+            int defaultRateLimit = 50;
+            int defaultPartSize = 16;
+
+            writer.write("ThreadCount=" + defaultThreadCount + "\n");
+            writer.write("RateLimit=" + defaultRateLimit + "\n");
+            writer.write("PartSize=" + defaultPartSize + "\n");
         }
-    }
-
-    public Path getConfigPath() {
-        return configPath;
-    }
-
-    public String getAccessKey() {
-        return accessKey;
-    }
-
-    public String getSecretKey() {
-        return secretKey;
-    }
-
-    public String getRegion() {
-        return region;
     }
 }

@@ -27,13 +27,15 @@ import com.google.common.util.concurrent.RateLimiter;
 
 public class S3Manager {
     private final S3Client client;
+    ConfigManager configManager;
 
-    public S3Manager(String accessKey, String secretKey, String region) {
+    public S3Manager(String accessKey, String secretKey, String region) throws IOException {
         AwsBasicCredentials awsCredentials = AwsBasicCredentials.create(accessKey, secretKey);
         this.client = S3Client.builder()
                 .credentialsProvider(StaticCredentialsProvider.create(awsCredentials))
                 .region(Region.of(region))
                 .build();
+        configManager = new ConfigManager();
     }
 
     public void listBuckets() {
@@ -71,7 +73,7 @@ public class S3Manager {
             remoteTimestamps.put(obj.key(), obj.lastModified());
         } // Move to method later
 
-        ExecutorService executor = Executors.newFixedThreadPool(8); // 8 Threads
+        ExecutorService executor = Executors.newFixedThreadPool(configManager.getThreadCount()); // 8 Threads
 
         List<Future<?>> futures = new ArrayList<>();
 
@@ -81,7 +83,7 @@ public class S3Manager {
                 .mapToLong(p -> p.toFile().length())
                 .sum();
 
-        RateLimiter rateLimiter = RateLimiter.create(50 * 1024 * 1024); // 50 MB/s
+        RateLimiter rateLimiter = RateLimiter.create(configManager.getRateLimit() * 1024 * 1024); // 50 MB/s
 
         for(Map.Entry<String, Path> entry : files.entrySet()) {
             String key = entry.getKey();
@@ -174,7 +176,7 @@ public class S3Manager {
     }
 
     private boolean UploadMultipart(String dstBucket, String key, File file) {
-        final long partSize = 16 * 1024 * 1024; // 16 MB
+        final long partSize = (long)configManager.getPartSize() * 1024 * 1024; // 16 MB
 
         CreateMultipartUploadRequest createRequest = CreateMultipartUploadRequest.builder()
                 .bucket(dstBucket)
