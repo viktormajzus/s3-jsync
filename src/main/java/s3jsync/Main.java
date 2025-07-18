@@ -24,5 +24,6 @@ public class Main {
         manager.listBuckets();
         manager.listObjects("mywebsite-8a7sd82bn");
         manager.uploadDirectory(Paths.get("C:\\Users\\v.majzus\\Desktop\\TestWrite"), "mywebsite-8a7sd82bn");
+        // manager.downloadDirectory("mywebsite-8a7sd82bn", Paths.get("C:\\Users\\v.majzus\\Desktop\\TestWrite"));
     }
 }

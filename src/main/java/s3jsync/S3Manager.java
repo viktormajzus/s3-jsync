@@ -2,6 +2,7 @@ package s3jsync;
 
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -10,7 +11,9 @@ import software.amazon.awssdk.services.s3.paginators.ListBucketsIterable;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.RandomAccessFile;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -157,8 +160,93 @@ public class S3Manager {
         executor.awaitTermination(5, TimeUnit.MINUTES);
     }
 
-    public void downloadDirectory(String srcBucket, Path dstDirectory) {
-        // TODO: Implement
+    public void downloadDirectory(String srcBucket, Path dstDirectory) throws InterruptedException {
+        ListObjectsV2Request request = ListObjectsV2Request.builder()
+                .bucket(srcBucket)
+                .build();
+
+        ListObjectsV2Response response = client.listObjectsV2(request);
+        List<S3Object> objects = response.contents();
+
+        ExecutorService executor = Executors.newFixedThreadPool(configManager.getThreadCount());
+        List<Future<?>> futures = new ArrayList<>();
+
+        AtomicLong totalBytesDownloaded = new AtomicLong(0);
+        long totalBytes = objects.stream().mapToLong(S3Object::size).sum();
+        long startTime = System.nanoTime();
+
+        for(S3Object obj : objects) {
+            String key = obj.key();
+            long size = obj.size();
+            Instant remoteModified = obj.lastModified();
+
+            Runnable task = () -> {
+                Path localPath = dstDirectory.resolve(key).normalize();
+
+                try {
+                    File localFile  = localPath.toFile();
+                    if(localFile.exists()) {
+                        Instant localModified = Instant.ofEpochMilli(localFile.lastModified());
+                        if(!remoteModified.isAfter(localModified)) {
+                            long skipped = totalBytesDownloaded.addAndGet(size);
+                            System.out.printf("[%.1f%%] Skipped (local is newer): %s\n", (skipped * 100.0) / totalBytes, key);
+                            return;
+                        }
+                    }
+
+                    Files.createDirectories(localPath.getParent());
+
+                    GetObjectRequest getRequest = GetObjectRequest.builder()
+                            .bucket(srcBucket)
+                            .key(key)
+                            .build();
+
+                    try(ResponseInputStream<GetObjectResponse> stream = client.getObject(getRequest);
+                        OutputStream outStream = Files.newOutputStream(localPath)) {
+                        byte[] buffer = new byte[8192];
+                        int bytesRead;
+                        while((bytesRead = stream.read(buffer)) != -1) {
+                            outStream.write(buffer, 0, bytesRead);
+                        }
+                    }
+
+                    localFile.setLastModified(remoteModified.toEpochMilli());
+
+                    long count = totalBytesDownloaded.addAndGet(size);
+                    System.out.printf("[%.1f%%] Downloaded: %s\n", (count * 100.0) / totalBytes, key);
+                } catch(IOException e) {
+                    e.printStackTrace();
+                    System.err.printf("Failed to download %s after 3 attempts.\n", key);
+                }
+            };
+
+            futures.add(executor.submit(task));
+        }
+
+        for (Future<?> future : futures) {
+            try {
+                future.get();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        executor.shutdown();
+        executor.awaitTermination(5, TimeUnit.MINUTES);
+
+        long durationNs = System.nanoTime() - startTime;
+        long seconds = durationNs / 1_000_000_000;
+        long minutes = seconds / 60;
+        long hours = minutes / 60;
+
+        seconds %= 60;
+        minutes %= 60;
+
+        System.out.printf(
+                "Downloaded %s in %02d:%02d:%02d\n",
+                formatSize(totalBytesDownloaded.get()),
+                hours, minutes, seconds
+        );
     }
 
     private boolean UploadWhole(String dstBucket, String key, File file) {
