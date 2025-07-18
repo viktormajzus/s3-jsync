@@ -41,6 +41,15 @@ public class S3Manager {
         configManager = new ConfigManager();
     }
 
+    public S3Manager(CredentialsManager credentialsManager) throws IOException {
+        AwsBasicCredentials awsCredentials = AwsBasicCredentials.create(credentialsManager.getAccessKey(), credentialsManager.getSecretKey());
+        this.client = S3Client.builder()
+                .credentialsProvider(StaticCredentialsProvider.create(awsCredentials))
+                .region(Region.of(credentialsManager.getRegion()))
+                .build();
+        configManager = new ConfigManager();
+    }
+
     public void listBuckets() {
         ListBucketsIterable response = client.listBucketsPaginator();
         System.out.println("My Buckets:");
@@ -343,6 +352,21 @@ public class S3Manager {
             return String.format("%.1f KB", sizeKB);
         } else {
             return sizeBytes + " B";
+        }
+    }
+
+    public boolean bucketExists(String bucketName) {
+        try {
+            HeadBucketRequest request =  HeadBucketRequest.builder().bucket(bucketName).build();
+            client.headBucket(request);
+            return true;
+        } catch(NoSuchBucketException e) {
+            return false;
+        } catch(S3Exception e) {
+            if(e.statusCode() == 404) {
+                return false;
+            }
+            else throw e;
         }
     }
 }
