@@ -2,7 +2,7 @@ plugins {
     id("java")
 }
 
-group = "org.example"
+group = "s3jsync"
 version = "1.0-SNAPSHOT"
 
 repositories {
