@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+set -e
+# Only on erase (not upgrade)
+if [ "${1:-0}" -eq 0 ]; then
+  rm -f /usr/bin/s3-jsync || true
+  if command -v xdg-desktop-menu >/dev/null 2>&1; then
+    xdg-desktop-menu uninstall /opt/s3-jsync/lib/s3-jsync-s3-jsync.desktop || true
+  fi
+fi
