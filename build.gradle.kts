@@ -53,40 +53,28 @@ runtime {
     }
 
     jpackage {
-        // Choose output: deb | rpm | app-image  (defaults to deb)
         val pkgType = (project.findProperty("pkg") as String?) ?: "deb"
         installerType = pkgType
 
-        val resDir = when (pkgType) {
-            "deb" -> file("packaging/deb")
-            "rpm" -> file("packaging/rpm")
-            else  -> null
-        }
-        if (resDir != null) {
-            resourceDir = resDir
-            // Avoid '+=' ambiguity by rebuilding the list
-            installerOptions = installerOptions + listOf("--resource-dir", resDir.absolutePath)
+        // point to the folder that contains s3-jsync.spec
+        if (pkgType == "rpm") {
+            resourceDir = file("packaging/rpm")
+        } else if (pkgType == "deb") {
+            resourceDir = file("packaging/deb")
         }
 
-        // Where to write images/installers
         outputDir = "jpackage"
-
-        // Names shown in the produced image/installer
         imageName = "s3-jsync"
         installerName = "s3-jsync"
-
-        // Pass extra raw jpackage flags here
-        installerOptions = installerOptions + listOf(
-            "--linux-menu-group", "Utilities",
-            "--linux-shortcut",
-            "--vendor", "s3jsync",
-            "--verbose"
-        )
-
-        // If you add an icon or license later:
-        // resourceDir = file("packaging/resources")
-        // imageOptions = listOf("--icon", file("packaging/icon.png").absolutePath)
-        // installerOptions += listOf("--license-file", file("LICENSE").absolutePath)
         appVersion = project.version.toString()
+
+        // verbose + temp just to inspect what jpackage uses
+        installerOptions = listOf(
+            "--linux-menu-group","Utilities",
+            "--linux-shortcut",
+            "--vendor","s3jsync",
+            "--verbose",
+            "--temp", file("build/jpkg-tmp").absolutePath
+        )
     }
 }
