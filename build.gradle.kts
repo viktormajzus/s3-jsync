@@ -57,10 +57,15 @@ runtime {
         val pkgType = (project.findProperty("pkg") as String?) ?: "deb"
         installerType = pkgType
 
-        resourceDir = when (pkgType) {
+        val resDir = when (pkgType) {
             "deb" -> file("packaging/deb")
             "rpm" -> file("packaging/rpm")
             else  -> null
+        }
+        if (resDir != null) {
+            resourceDir = resDir
+            // Avoid '+=' ambiguity by rebuilding the list
+            installerOptions = installerOptions + listOf("--resource-dir", resDir.absolutePath)
         }
 
         // Where to write images/installers
@@ -71,10 +76,11 @@ runtime {
         installerName = "s3-jsync"
 
         // Pass extra raw jpackage flags here
-        installerOptions = listOf(
+        installerOptions = installerOptions + listOf(
             "--linux-menu-group", "Utilities",
             "--linux-shortcut",
             "--vendor", "s3jsync",
+            "--verbose"
         )
 
         // If you add an icon or license later:
