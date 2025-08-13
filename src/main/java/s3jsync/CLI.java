@@ -74,7 +74,10 @@ public class CLI {
         System.out.println("Please enter your region:");
         String region = scanner.nextLine();
 
-        credentialsManager.save(accessKey, secretKey, region);
+        credentialsManager.save(
+                accessKey.strip(),
+                secretKey.strip(),
+                region.strip());
     }
 
     private void configure() throws IOException {
@@ -86,7 +89,10 @@ public class CLI {
         System.out.println("Please enter your region:");
         String region = scanner.nextLine();
 
-        credentialsManager.save(accessKey, secretKey, region);
+        credentialsManager.save(
+                accessKey.strip(),
+                secretKey.strip(),
+                region.strip());
     }
 
     private void list(String[] args) {
