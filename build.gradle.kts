@@ -50,26 +50,50 @@ runtime {
         val pkgType = (project.findProperty("pkg") as String?) ?: "deb"
         installerType = pkgType
 
-        installerOptions = installerOptions + listOf("--install-dir", "/usr/lib")
-
-        if (pkgType == "rpm") {
-            resourceDir = file("packaging/rpm")
-        } else if (pkgType == "deb") {
-            resourceDir = file("packaging/deb")
-            installerOptions = installerOptions + listOf("--resource-dir", file("packaging/deb").absolutePath)
-        }
-
         outputDir = "jpackage"
         imageName = "s3-jsync"
         installerName = "s3-jsync"
         appVersion = project.version.toString()
 
-        installerOptions = listOf(
-            "--linux-menu-group","Utilities",
-            "--linux-shortcut",
-            "--vendor","s3jsync",
-            "--verbose",
-            "--temp", file("build/jpkg-tmp").absolutePath
+        // Common metadata
+        installerOptions = installerOptions + listOf(
+            "--vendor", "s3jsync",
+            "--verbose"
         )
+
+        when (pkgType) {
+            // debian
+            "deb" -> {
+                resourceDir = file("packaging/deb")
+                installerOptions = installerOptions + listOf("--resource-dir", file("packaging/deb").absolutePath)
+
+                installerOptions = installerOptions + listOf(
+                    "--linux-menu-group", "Utilities",
+                    "--linux-shortcut",
+                    "--install-dir", "/usr/lib"
+                )
+            }
+
+            // rpm
+            "rpm" -> {
+                resourceDir = file("packaging/rpm")
+                installerOptions = installerOptions + listOf("--resource-dir", file("packaging/rpm").absolutePath)
+
+                installerOptions = installerOptions + listOf(
+                    "--linux-menu-group", "Utilities",
+                    "--linux-shortcut"
+                )
+            }
+
+            // windows (exe/msi)
+            "exe", "msi" -> {
+                installerOptions = installerOptions + listOf("--win-dir-chooser", "--win-per-user-install")
+            }
+
+            // app image
+            "app-image" -> {
+            }
+        }
     }
+
 }
