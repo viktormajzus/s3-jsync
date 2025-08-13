@@ -3,6 +3,7 @@ package s3jsync;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.core.ResponseInputStream;
+import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -41,12 +42,30 @@ public class S3Manager {
         configManager = new ConfigManager();
     }
 
+    // Deprecated
     public S3Manager(CredentialsManager credentialsManager) throws IOException {
         AwsBasicCredentials awsCredentials = AwsBasicCredentials.create(credentialsManager.getAccessKey(), credentialsManager.getSecretKey());
         this.client = S3Client.builder()
                 .credentialsProvider(StaticCredentialsProvider.create(awsCredentials))
                 .region(Region.of(credentialsManager.getRegion()))
                 .build();
+        configManager = new ConfigManager();
+    }
+
+    public S3Manager(EnvironmentCredentials creds) throws Exception {
+        AwsBasicCredentials awsCredentials = AwsBasicCredentials.create(creds.getAccessKey(), creds.getSecretKey());
+
+        S3Client tempClient = S3Client.builder()
+                .credentialsProvider(StaticCredentialsProvider.create(awsCredentials))
+                .region(Region.of(creds.getRegion()))
+                .build();
+
+        if(!validateViaListBucket(tempClient)) {
+            tempClient.close();
+            throw new IllegalStateException("Invalid credentials!");
+        }
+
+        this.client = tempClient;
         configManager = new ConfigManager();
     }
 
@@ -367,6 +386,29 @@ public class S3Manager {
                 return false;
             }
             else throw e;
+        }
+    }
+
+    private Boolean validateViaListBucket(S3Client client) throws Exception {
+        try {
+            client.listBucketsPaginator().stream().findFirst();
+            return true;
+        }
+        catch(S3Exception e) {
+            String code = e.awsErrorDetails().errorCode();
+            if("AccessDenied".equals(code))
+                return true;
+
+            if("InvalidAccessKeyId".equals(code) ||
+            "SignatureDoesNotMatch".equals(code) ||
+            "ExpiredToken".equals(code) ||
+            "InvalidToken".equals(code)) {
+                return false;
+            }
+
+            throw e;
+        } catch(SdkClientException e) {
+            throw e;
         }
     }
 }

@@ -6,6 +6,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
+// --------------------
+//   DEPRECATED CLASS
+// --------------------
 public class CredentialsManager {
     private final Path configPath;
     private String accessKey;

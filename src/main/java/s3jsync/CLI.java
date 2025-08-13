@@ -7,15 +7,22 @@ import java.util.Scanner;
 
 public class CLI {
     private final S3Manager manager;
-    private final CredentialsManager credentialsManager;
+    private final EnvironmentCredentials creds;
 
-    public CLI() throws IOException {
-        credentialsManager = new CredentialsManager();
-        if(!credentialsManager.load()) {
-            configure();
+    public CLI() throws Throwable {
+        try {
+            creds = new EnvironmentCredentials();
         }
+        catch (Throwable e) {
+            if(e instanceof NullPointerException)
+                throw new Exception("Environment variables not set. Please see documentation for details.");
 
-        manager = new S3Manager(credentialsManager);
+            throw e;
+        }
+        if(!creds.getValidity())
+            throw new Exception("Invalid credentials");
+
+        manager = new S3Manager(creds);
     }
 
     public void run(String[] args) throws IOException, InterruptedException {
@@ -56,7 +63,7 @@ public class CLI {
         System.out.println("Download bucket contents to directory:\n  s3-jsync download <bucket> <localDir>");
         System.out.println("List buckets:\n  s3-jsync list -b");
         System.out.println("List bucket contents:\n  s3-jsync list -o <bucket>");
-        System.out.println("Configure AWS credentials:\n  s3-jsync configure");
+        System.out.println("Configure AWS credentials [DEPRECATED]:\n  s3-jsync configure");
     }
 
     private void configure(String[] args) throws IOException {
@@ -66,33 +73,37 @@ public class CLI {
             return;
         }
 
-        Scanner scanner = new Scanner(System.in);
-        System.out.println("Please enter your access key:");
-        String accessKey = scanner.nextLine();
-        System.out.println("Please enter your secret key:");
-        String secretKey = scanner.nextLine();
-        System.out.println("Please enter your region:");
-        String region = scanner.nextLine();
+        System.out.println("Configure AWS credentials [DEPRECATED]");
 
-        credentialsManager.save(
-                accessKey.strip(),
-                secretKey.strip(),
-                region.strip());
+//        Scanner scanner = new Scanner(System.in);
+//        System.out.println("Please enter your access key:");
+//        String accessKey = scanner.nextLine();
+//        System.out.println("Please enter your secret key:");
+//        String secretKey = scanner.nextLine();
+//        System.out.println("Please enter your region:");
+//        String region = scanner.nextLine();
+//
+//        creds.save(
+//                accessKey.strip(),
+//                secretKey.strip(),
+//                region.strip());
     }
 
     private void configure() throws IOException {
-        Scanner scanner = new Scanner(System.in);
-        System.out.println("Please enter your access key:");
-        String accessKey = scanner.nextLine();
-        System.out.println("Please enter your secret key:");
-        String secretKey = scanner.nextLine();
-        System.out.println("Please enter your region:");
-        String region = scanner.nextLine();
+        System.out.println("Configure AWS credentials [DEPRECATED]");
 
-        credentialsManager.save(
-                accessKey.strip(),
-                secretKey.strip(),
-                region.strip());
+//        Scanner scanner = new Scanner(System.in);
+//        System.out.println("Please enter your access key:");
+//        String accessKey = scanner.nextLine();
+//        System.out.println("Please enter your secret key:");
+//        String secretKey = scanner.nextLine();
+//        System.out.println("Please enter your region:");
+//        String region = scanner.nextLine();
+//
+//        creds.save(
+//                accessKey.strip(),
+//                secretKey.strip(),
+//                region.strip());
     }
 
     private void list(String[] args) {
