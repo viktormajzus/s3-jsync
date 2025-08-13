@@ -56,11 +56,14 @@ runtime {
         val pkgType = (project.findProperty("pkg") as String?) ?: "deb"
         installerType = pkgType
 
+        installerOptions = installerOptions + listOf("--install-dir", "/usr/lib")
+
         // point to the folder that contains s3-jsync.spec
         if (pkgType == "rpm") {
             resourceDir = file("packaging/rpm")
         } else if (pkgType == "deb") {
             resourceDir = file("packaging/deb")
+            installerOptions = installerOptions + listOf("--resource-dir", file("packaging/deb").absolutePath)
         }
 
         outputDir = "jpackage"

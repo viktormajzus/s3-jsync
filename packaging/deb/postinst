@@ -1,3 +1,9 @@
 #!/usr/bin/env bash
 set -e
-ln -sf /opt/s3-jsync/bin/s3-jsync /usr/bin/s3-jsync || true
+APP_BIN=""
+for p in /usr/lib/s3-jsync/bin/s3-jsync /opt/s3-jsync/bin/s3-jsync; do
+  if [ -x "$p" ]; then APP_BIN="$p"; break; fi
+done
+if [ -n "$APP_BIN" ]; then
+  ln -sf "$APP_BIN" /usr/bin/s3-jsync || true
+fi

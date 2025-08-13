@@ -50,8 +50,8 @@ s3-jsync
 
 %install
 rm -rf %{buildroot}
-install -d -m 755 %{buildroot}/opt/s3-jsync
-cp -r %{_sourcedir}/opt/s3-jsync/* %{buildroot}/opt/s3-jsync
+install -d -m 755 %{buildroot}/usr/lib/s3-jsync
+cp -r %{_sourcedir}/usr/lib/s3-jsync/* %{buildroot}/usr/lib/s3-jsync
 if [ "$(echo %{_sourcedir}/lib/systemd/system/*.service)" != '%{_sourcedir}/lib/systemd/system/*.service' ]; then
   install -d -m 755 %{buildroot}/lib/systemd/system
   cp %{_sourcedir}/lib/systemd/system/*.service %{buildroot}/lib/systemd/system
@@ -78,9 +78,9 @@ sed -i -e 's/.*/%dir "&"/' %{package_filelist}
 %post
 package_type=rpm
 
-xdg-desktop-menu install /opt/s3-jsync/lib/s3-jsync-s3-jsync.desktop
+xdg-desktop-menu install /usr/lib/s3-jsync/lib/s3-jsync-s3-jsync.desktop
 
-ln -sf /opt/s3-jsync/bin/s3-jsync /usr/bin/s3-jsync || true
+ln -sf /usr/lib/s3-jsync/bin/s3-jsync /usr/bin/s3-jsync || true
 
 %pre
 package_type=rpm
@@ -93,7 +93,7 @@ fi
 package_type=rpm
 
 
-xdg-desktop-menu uninstall /opt/s3-jsync/lib/s3-jsync-s3-jsync.desktop
+xdg-desktop-menu uninstall /usr/lib/s3-jsync/lib/s3-jsync-s3-jsync.desktop
 
 %postun
 package_type=rpm
