@@ -3,7 +3,6 @@ package s3jsync;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.core.ResponseInputStream;
-import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -33,6 +32,14 @@ public class S3Manager {
     private final S3Client client;
     ConfigManager configManager;
 
+    /** Constructs using strings rather than class
+     *
+     * @deprecated Deprecated until future use
+     * @param accessKey Access Key ID
+     * @param secretKey Secret Key
+     * @param region Region
+     * @throws IOException Throws an exception if it failed to create config
+     */
     public S3Manager(String accessKey, String secretKey, String region) throws IOException {
         AwsBasicCredentials awsCredentials = AwsBasicCredentials.create(accessKey, secretKey);
         this.client = S3Client.builder()
@@ -43,6 +50,12 @@ public class S3Manager {
     }
 
     // Deprecated
+    /** Another constructor, deprecated
+     *
+     * @deprecated Deprecated due to credentialsManager not being used anymore
+     * @param credentialsManager CredentialsManager class
+     * @throws IOException Throws an exception if it failed to create config
+     */
     public S3Manager(CredentialsManager credentialsManager) throws IOException {
         AwsBasicCredentials awsCredentials = AwsBasicCredentials.create(credentialsManager.getAccessKey(), credentialsManager.getSecretKey());
         this.client = S3Client.builder()
@@ -52,6 +65,11 @@ public class S3Manager {
         configManager = new ConfigManager();
     }
 
+    /** This constructor initializes the S3Client and loads config settings
+     *
+     * @param creds EnvironmentCredentials class
+     * @throws Exception Throws an exception if the credentials are invalid, if there was an error connecting to AWS, or if it failed to create a config
+     */
     public S3Manager(EnvironmentCredentials creds) throws Exception {
         AwsBasicCredentials awsCredentials = AwsBasicCredentials.create(creds.getAccessKey(), creds.getSecretKey());
 
@@ -69,6 +87,9 @@ public class S3Manager {
         configManager = new ConfigManager();
     }
 
+    /** Lists available buckets (and accessible)
+     *
+     */
     public void listBuckets() {
         ListBucketsIterable response = client.listBucketsPaginator();
         System.out.println("My Buckets:");
@@ -76,6 +97,10 @@ public class S3Manager {
                 System.out.println(" - " + bucket.name()));
     }
 
+    /** Lists objects in a bucket
+     *
+     * @param bucketName Name of the bucket to list
+     */
     public void listObjects(String bucketName) {
         ListObjectsV2Request request = ListObjectsV2Request.builder()
                 .bucket(bucketName)
@@ -92,6 +117,13 @@ public class S3Manager {
                 System.out.printf(" - %-50s %12s\n", object.key(), formatSize(object.size())));
     }
 
+    /** Uploads an entire directory to an S3 bucket
+     *
+     * @param srcDirectory Directory to upload
+     * @param dstBucket Destination bucket name
+     * @throws IOException Throws an exception if it failed to open file
+     * @throws InterruptedException Throws an exception if threads failed to complete
+     */
     public void uploadDirectory(Path srcDirectory, String dstBucket) throws IOException, InterruptedException {
         Map<String, Path> files = FileWalker.getAllFiles(srcDirectory);
 
@@ -114,6 +146,7 @@ public class S3Manager {
                 .mapToLong(p -> p.toFile().length())
                 .sum();
 
+        // Unstable, but needed
         RateLimiter rateLimiter = RateLimiter.create(configManager.getRateLimit() * 1024 * 1024); // 50 MB/s
 
         for(Map.Entry<String, Path> entry : files.entrySet()) {
@@ -124,7 +157,6 @@ public class S3Manager {
             Runnable task = () -> {
                 Instant localModified = Instant.ofEpochMilli(file.lastModified());
 
-                // For later
                 if (remoteTimestamps.containsKey(key)) {
                     Instant remoteModified = remoteTimestamps.get(key);
                     if (remoteModified.isAfter(localModified)) {
@@ -135,6 +167,7 @@ public class S3Manager {
                     }
                 }
 
+                // Unstable, but needed
                 rateLimiter.acquire((int)size);
 
                 boolean success = false;
@@ -188,6 +221,12 @@ public class S3Manager {
         executor.awaitTermination(5, TimeUnit.MINUTES);
     }
 
+    /** Downloads a bucket into a directory
+     *
+     * @param srcBucket Bucket name to download from
+     * @param dstDirectory Directory to download to
+     * @throws InterruptedException Throws an exception if there was an error in regard to threads
+     */
     public void downloadDirectory(String srcBucket, Path dstDirectory) throws InterruptedException {
         ListObjectsV2Request request = ListObjectsV2Request.builder()
                 .bucket(srcBucket)
@@ -277,6 +316,13 @@ public class S3Manager {
         );
     }
 
+    /** Uploads a file in one piece
+     *
+     * @param dstBucket Bucket to upload to
+     * @param key The name (key) you want to use in the bucket for this file
+     * @param file File object to upload
+     * @return True if successful, false otherwise
+     */
     private boolean UploadWhole(String dstBucket, String key, File file) {
         try {
             PutObjectRequest request = PutObjectRequest.builder()
@@ -291,6 +337,13 @@ public class S3Manager {
         }
     }
 
+    /** Uploads a file in parts (part size can be changed in config)
+     *
+     * @param dstBucket Bucket to upload to
+     * @param key The name you want to use in the bucket
+     * @param file File object to upload
+     * @return True if successful, false otherwise
+     */
     private boolean UploadMultipart(String dstBucket, String key, File file) {
         final long partSize = (long)configManager.getPartSize() * 1024 * 1024; // 16 MB
 
@@ -357,7 +410,11 @@ public class S3Manager {
         }
     }
 
-
+    /** Formats a string to B/KB/MB/GB
+     *
+     * @param sizeBytes Size in bytes
+     * @return String in format, example 1.1GB
+     */
     private String formatSize(long sizeBytes) {
         if(sizeBytes >= 1024 * 1024 * 1024) {
             double sizeGB = sizeBytes / (1024.0 * 1024.0 * 1024.0);
@@ -374,6 +431,11 @@ public class S3Manager {
         }
     }
 
+    /** Checks whether a bucket exists
+     *
+     * @param bucketName Name of the bucket
+     * @return True if exists, false otherwise
+     */
     public boolean bucketExists(String bucketName) {
         try {
             HeadBucketRequest request =  HeadBucketRequest.builder().bucket(bucketName).build();
@@ -389,6 +451,12 @@ public class S3Manager {
         }
     }
 
+    /** Validates whether the client with provided credentials exists
+     *
+     * @param client Constructed client using AWS credentials
+     * @return True if exists (doesn't matter whether client has access to buckets), false otherwise
+     * @throws Exception Throws an exception if there was an issue with connecting to AWS servers
+     */
     private Boolean validateViaListBucket(S3Client client) throws Exception {
         try {
             client.listBucketsPaginator().stream().findFirst();
@@ -406,8 +474,6 @@ public class S3Manager {
                 return false;
             }
 
-            throw e;
-        } catch(SdkClientException e) {
             throw e;
         }
     }

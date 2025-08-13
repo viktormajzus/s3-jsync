@@ -1,10 +1,6 @@
 package s3jsync;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
@@ -12,6 +8,10 @@ public class EnvironmentCredentials {
     private Map<String, String> env;
     private Boolean areValid;
 
+    /** Constructor for environment variables class
+     *
+     * @throws Throwable Throws an exception if credentials aren't in a valid format
+     */
     public EnvironmentCredentials() throws Throwable {
         areValid = false;
 
@@ -23,8 +23,12 @@ public class EnvironmentCredentials {
         areValid = true;
     }
 
-    public Boolean load() throws IOException {
-        String credentials[] = new String[3];
+    /** Loads the environment variables into a private map
+     *
+     * @return Returns true on success, false otherwise
+     */
+    public Boolean load() {
+        String[] credentials = new String[3];
 
         credentials[0] = System.getenv("AWS_ACCESS_KEY_ID").trim();
         credentials[1] = System.getenv("AWS_SECRET_KEY").trim();
@@ -41,23 +45,46 @@ public class EnvironmentCredentials {
         return true;
     }
 
+    /** Getter for validity of credentials
+     *
+     * @return Returns true if credentials are in valid format, false otherwise
+     */
     public Boolean getValidity() {
         return areValid;
     }
 
+    /** Getter for the access key id
+     *
+     * @return Access Key ID string
+     */
     public String getAccessKey() {
         return env.get("AWS_ACCESS_KEY_ID");
     }
 
+    /** Getter for the secret key
+     *
+     * @return Returns Secret Key string
+     */
     public String getSecretKey() {
         return env.get("AWS_SECRET_KEY");
     }
 
+    /** Geter for region
+     *
+     * @return Returns Region string
+     */
     public String getRegion() {
         return env.get("AWS_REGION");
     }
 
     // for support with old version, needs rewriting
+    /** Placeholder method for support with the old CredentialsManager class
+     *
+     * @deprecated Since its not used. Added the tag to get rid of warnings
+     * @param a Nothing
+     * @param b Nothing
+     * @param c Nothing
+     */
     public void save(String a, String b, String c) {
 
     }
@@ -89,8 +116,6 @@ public class EnvironmentCredentials {
         if(array == null || array.length == 0 || array.length > 3)
             return false;
 
-        if(!isValidAccessKey(array[0]) || !isValidSecretKey(array[1]))
-            return false;
         return isValidAccessKey(array[0]) &&
                 isValidSecretKey(array[1]) &&
                 isValidRegion(array[2]);

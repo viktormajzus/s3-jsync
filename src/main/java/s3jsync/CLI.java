@@ -3,13 +3,16 @@ package s3jsync;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Scanner;
 
 public class CLI {
     private final S3Manager manager;
-    private final EnvironmentCredentials creds;
 
+    /** Constructs the CLI object, ensures validity of credentials
+     *
+     * @throws Throwable Throws an exception if credentials are invalid or environment variables are not set
+     */
     public CLI() throws Throwable {
+        EnvironmentCredentials creds;
         try {
             creds = new EnvironmentCredentials();
         }
@@ -25,7 +28,11 @@ public class CLI {
         manager = new S3Manager(creds);
     }
 
-    public void run(String[] args) throws IOException, InterruptedException {
+    /** Runs the CLI
+     *
+     * @param args Arguments
+     */
+    public void run(String[] args) {
         if(args.length==0) {
             printUsage();
             return;
@@ -44,10 +51,7 @@ public class CLI {
             case "configure":
                 configure(args);
                 break;
-            case "help":
-                printUsage();
-                break;
-            case "--help":
+            case "help", "--help":
                 printUsage();
                 break;
             default:
@@ -66,7 +70,12 @@ public class CLI {
         System.out.println("Configure AWS credentials [DEPRECATED]:\n  s3-jsync configure");
     }
 
-    private void configure(String[] args) throws IOException {
+    /** Deprecated. Will be removed soon
+     *
+     *
+     * @param args Arguments
+     */
+    private void configure(String[] args) {
         if(args.length != 1) {
             System.err.println("Invalid number of arguments for configure.");
             System.out.println("Usage: s3-jsync configure");
@@ -89,7 +98,11 @@ public class CLI {
 //                region.strip());
     }
 
-    private void configure() throws IOException {
+    /**
+     *
+     * @deprecated Deprecated due to new credentials system
+     */
+    private void configure() {
         System.out.println("Configure AWS credentials [DEPRECATED]");
 
 //        Scanner scanner = new Scanner(System.in);

@@ -3,7 +3,7 @@ package s3jsync;
 import java.io.IOException;
 
 public class Main {
-    public static void main(String[] args) throws IOException, InterruptedException {
+    public static void main(String[] args) {
         CLI cli = null;
         try {
             cli = new CLI();
@@ -13,7 +13,6 @@ public class Main {
             System.exit(1);
         }
 
-        assert cli != null;
         cli.run(args);
     }
 }
