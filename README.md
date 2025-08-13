@@ -45,6 +45,23 @@ Config will be created upon your first run of the program. It will be saved in %
 ### Or, simply, run the provided scripts in /packaging/
 Note that you will still need to manually install the program by either running the msi/exe, or using sudo apt/dnf install
 
+- **Linux Debian/Ubuntu**:
+  ```
+  chmod +x packaging/build-deb.sh
+  ./packaging/build-deb.sh
+  ```
+- **Linux RHEL/Rocky/Fedora**:
+  ```
+  chmod +x packaging/build-rpm.sh
+  ./packaging/build-rpm.sh
+  ```
+- **Windows**:
+  ```
+  .\packaging\build-msi.ps1
+  # or
+  .\packaging\build-exe.ps1
+  ```
+
 ### Build it and enjoy!
 
 ### Recommended:
