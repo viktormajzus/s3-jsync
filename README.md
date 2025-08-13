@@ -139,3 +139,9 @@ Opens a help menu
 `s3-jsync configure`
 
 Does nothing, as it was deprecated, and the credentials were moved to environment variables
+
+## Disclaimer
+
+This project is only a proof of concept (PoC). I, the author, will not be held responsible for any damage caused by the use, and misuse, of this project. I highly discourage using this project in any production environment, as it has not been through thorough testing, and has dangerous functions, such as `s3-jsync delete`.
+
+See [DISCLAIMER.md](./DISCLAIMER.md) for full legal details.
