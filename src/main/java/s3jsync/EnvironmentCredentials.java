@@ -69,7 +69,7 @@ public class EnvironmentCredentials {
         return env.get("AWS_SECRET_KEY");
     }
 
-    /** Geter for region
+    /** Getter for region
      *
      * @return Returns Region string
      */
@@ -80,7 +80,7 @@ public class EnvironmentCredentials {
     // for support with old version, needs rewriting
     /** Placeholder method for support with the old CredentialsManager class
      *
-     * @deprecated Since its not used. Added the tag to get rid of warnings
+     * @deprecated Since it's not used. Added the tag to get rid of warnings
      * @param a Nothing
      * @param b Nothing
      * @param c Nothing

@@ -85,9 +85,22 @@ runtime {
                 )
             }
 
-            // windows (exe/msi)
-            "exe", "msi" -> {
-                installerOptions = installerOptions + listOf("--win-dir-chooser", "--win-per-user-install")
+            // windows
+            "msi" -> {
+                imageOptions = imageOptions + listOf("--win-console")
+                installerOptions = installerOptions + listOf(
+                    "--win-dir-chooser",
+                    "--win-per-user-install"
+                )
+                resourceDir = file("packaging/windows")
+            }
+            "exe" -> {
+                imageOptions = imageOptions + listOf("--win-console")
+                installerOptions = installerOptions + listOf(
+                    "--win-dir-chooser",
+                    "--win-per-user-install"
+                )
+                resourceDir = file("packaging/windows")
             }
 
             // app image
